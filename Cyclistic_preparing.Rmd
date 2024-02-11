@@ -1,5 +1,5 @@
 ---
-title: "Cyclistic data analysis"
+title: "Cyclistic data analysis - preparing"
 author: "Oscar Fernandez Solano"
 date: "2024-02-10"
 output: html_document
@@ -79,6 +79,11 @@ And we can see the first rows in the dataframe.
 head(df)
 ```
 
+Finally, we show a summary of the data.
+```{r}
+summary(df)
+```
+
 From the next plot, we can see that our variable of interest is not balanced. This might cause a bias in our results. Therefore, we try to mitigate this downsampling the cases for members. Which can also reduce the amount of data to process. However, we decided to make this downsampling after the cleaning phase, becase we still don't know how our data will be after that phase.
 ```{r}
 ggplot(df) +
@@ -89,49 +94,3 @@ ggplot(df) +
 df %>%
   count(member_casual)
 ```
-
-First, we save the data from the "casual" class.
-```{r}
-casual_df <- df %>%
-  filter(member_casual == "casual")
-```
-
-Now we randomly sample cases with "member" class.
-```{r}
-downsampled_df <- df %>%
-  filter(member_casual == "member") %>%
-  sample_n(size = nrow(casual_df), replace = FALSE, seed = 123)
-```
-
-Finally, we can bind both dataframes.
-```{r}
-downsampled_df <- bind_rows(casual_df, downsampled_df)
-
-file_name = paste0(data_path, "2023_cyclistic_tripdata.csv")
-
-if (!file.exists(file_name)) {
-  df_files = list()
-  df <- bind_rows(lapply(files, read_csv))
-  write_csv(df, paste0(data_path, "2023_cyclistic_tripdata.csv"))
-  print("File created.")
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
