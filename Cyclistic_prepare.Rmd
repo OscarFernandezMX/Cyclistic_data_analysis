@@ -1,0 +1,137 @@
+---
+title: "Cyclistic data analysis"
+author: "Oscar Fernandez Solano"
+date: "2024-02-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Ask
+
+## Prepare
+
+### Dataset description
+
+### Dataset reading
+
+We use the `tidyverse` library.
+```{r libraries}
+library(tidyverse)
+```
+
+Next we set the working directory and the path to the data files.
+```{r setting working directory}
+setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
+data_path = "Data/cyclistic/"
+```
+
+We get the list of the files to read them.
+```{r}
+files = list.files(path = data_path, pattern = ".csv$", full.names = TRUE)
+cat(length(files), "files found.")
+```
+
+We check the structure of the first sample file.
+First we view the first rows of this file.
+```{r sample head}
+sample_data = read_csv(files[1])
+head(sample_data)
+```
+
+We can see its structure.
+```{r sample structure}
+str(sample_data)
+```
+And the name of the attributes.
+```{r sample column names}
+colnames(sample_data)
+```
+
+We need to join all csv files into a single one in order to analyze it easily. We assume the structure of each file is the same, therefore we can join the files one after the other. Otherwise, we'll have an error when trying to join them.
+```{r merge files}
+file_name = paste0(data_path, "2023_cyclistic_tripdata.csv")
+
+if (!file.exists(file_name)) {
+  df_files = list()
+  df <- bind_rows(lapply(files, read_csv))
+  write_csv(df, paste0(data_path, "2023_cyclistic_tripdata.csv"))
+  print("File created.")
+} else {
+  df <- read_csv(file_name)
+  print("File already exists.")
+}
+```
+Now that we have a single file, we can check the same aspects as with the sample data.
+The structure is the same.
+```{r structure}
+str(df)
+```
+The column names are the same.
+```{r}
+colnames(df)
+```
+
+And we can see the first rows in the dataframe.
+```{r}
+head(df)
+```
+
+From the next plot, we can see that our variable of interest is not balanced. This might cause a bias in our results. Therefore, we try to mitigate this downsampling the cases for members. Which can also reduce the amount of data to process. However, we decided to make this downsampling after the cleaning phase, becase we still don't know how our data will be after that phase.
+```{r}
+ggplot(df) +
+  geom_bar(aes(x = member_casual))
+```
+
+```{r}
+df %>%
+  count(member_casual)
+```
+
+First, we save the data from the "casual" class.
+```{r}
+casual_df <- df %>%
+  filter(member_casual == "casual")
+```
+
+Now we randomly sample cases with "member" class.
+```{r}
+downsampled_df <- df %>%
+  filter(member_casual == "member") %>%
+  sample_n(size = nrow(casual_df), replace = FALSE, seed = 123)
+```
+
+Finally, we can bind both dataframes.
+```{r}
+downsampled_df <- bind_rows(casual_df, downsampled_df)
+
+file_name = paste0(data_path, "2023_cyclistic_tripdata.csv")
+
+if (!file.exists(file_name)) {
+  df_files = list()
+  df <- bind_rows(lapply(files, read_csv))
+  write_csv(df, paste0(data_path, "2023_cyclistic_tripdata.csv"))
+  print("File created.")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
