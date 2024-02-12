@@ -1,26 +1,27 @@
 ---
-title: "Cyclistic data analysis - cleaning"
+title: "Cyclistic data analysis - cleaning (part 2)"
 author: "Oscar Fernandez Solano"
 date: "2024-02-11"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The first part of the cleaning phase can be found [here](https://github.com/OscarFernandezMX). In the first part we used Apache Spark and SQL to clean the data. Here is a summary of the steps made:
-- Inspected each row for inconsistencies.
-- Removed duplicates.
-- Removed rows containing NA in stations' information.
+The first part of the cleaning phase can be found [here](https://github.com/OscarFernandezMX). In the first part we used Apache Spark and SQL to clean the data. Here is a summary of the steps made:  
+- Inspected each row for inconsistencies. 
+- Removed duplicates.  
+- Removed rows containing NA in stations' information.  
 
 As mentioned in the pervious phase, we need to make a downsampling to have balanced classes. This is because we want to find differences between casual cyclists and members.
 
-We use the `tidyverse`library.
+We use the following libraries.
 ```{r libraries}
 library(tidyverse)
 library(skimr)
 library(janitor)
+library(hms)
 ```
 
 Next we set the working directory, the data path, and read the csv file created from the preparing phase.
@@ -31,51 +32,80 @@ file_name = paste0(data_path, "2023_cyclistic_tripdata_clean.csv")
 df <- read_csv(file_name)
 ```
 
-We get the summary of the data. From this summary, we can notice what 
-```{r}
-glimpse(df)
-```
+### Data check
 
-```{r}
+We get the summary of the data to check that the file is clean. After this, we can continue with the cleaning phase.
+```{r data check}
 skim_without_charts(df)
 ```
 
+### Set ``ride_length` and `day_of_week`
 
+The next step is to create the ride length based on the information from the starting and ending dates. We also need to create a column that indicates the week of the day where the ride started (starting with Sunday = 1 to Saturday = 7).
+```{r}
+df_modified <- df %>%
+  mutate(ride_duration = as_hms(ended_at - started_at)) %>%
+  mutate(day_of_week = wday(started_at)) %>%
+  arrange(started_at)
 
+head(df_modified)
+```
 
+Now that we have included this attributes, we create a new csv file. We replace the clean file to avoid having multiple files.
+```{r}
+file_name = paste0(data_path, "2023_cyclistic_tripdata_clean.csv")
+write_csv(df_modified, file_name)
+print("File created.")
+```
 
+### Downsampling
 
-
-
-
-
-
-
-
-
+As we mentioned in the [preparing phase](https://github.com/OscarFernandezMX), our groups of interest don't have the same number of instances. This was observed before cleaning. Now, we plot each class to verify how the cleaning process changed (or not) this observation.
+```{r bar plot for member casual 1}
+ggplot(df_modified) +
+  geom_bar(aes(x = member_casual)) +
+  ylab("Rows") +
+  labs(title = "Unbalanced classes for member_casual")
+```
+The plot shows the same observation we made in the beginning. Therefore, we still need to downsample our data set for the member class.
 
 First, we save the data from the "casual" class.
 ```{r}
-casual_df <- df %>%
+casual_df <- df_modified %>%
   filter(member_casual == "casual")
+
+cat("Number of rows:", nrow(casual_df))
 ```
 
 Now we randomly sample cases with "member" class.
 ```{r}
-downsampled_df <- df %>%
+downsampled_member <- df_modified %>%
   filter(member_casual == "member") %>%
   sample_n(size = nrow(casual_df), replace = FALSE, seed = 123)
+
+cat("Number of rows:", nrow(downsampled_member))
 ```
 
-Finally, we can bind both dataframes.
+Finally, we can bind both dataframes and save the new data set.
 ```{r}
-downsampled_df <- bind_rows(casual_df, downsampled_df)
-
-file_name = paste0(data_path, "2023_cyclistic_tripdata.csv")
+file_name = paste0(data_path, "2023_cyclistic_tripdata_downsampled.csv")
 
 if (!file.exists(file_name)) {
-  df_files = list()
-  df <- bind_rows(lapply(files, read_csv))
-  write_csv(df, paste0(data_path, "2023_cyclistic_tripdata.csv"))
+  downsampled_df <- bind_rows(casual_df, downsampled_member)
+  write_csv(downsampled_df, file_name)
   print("File created.")
+} else {
+  print("File already created.")
+  downsampled_df <- read_csv(file_name)
+}
 ```
+
+
+```{r bar plot for member casual 2}
+ggplot(downsampled_df) +
+  geom_bar(aes(x = member_casual)) +
+  ylab("Rows") +
+  labs(title = "Balanced classes", subtitle = "After downsampling")
+```
+
+Now that the data is ready, we can continue with the analysis phase.
