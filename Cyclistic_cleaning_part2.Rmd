@@ -1,0 +1,81 @@
+---
+title: "Cyclistic data analysis - cleaning"
+author: "Oscar Fernandez Solano"
+date: "2024-02-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The first part of the cleaning phase can be found [here](https://github.com/OscarFernandezMX). In the first part we used Apache Spark and SQL to clean the data. Here is a summary of the steps made:
+- Inspected each row for inconsistencies.
+- Removed duplicates.
+- Removed rows containing NA in stations' information.
+
+As mentioned in the pervious phase, we need to make a downsampling to have balanced classes. This is because we want to find differences between casual cyclists and members.
+
+We use the `tidyverse`library.
+```{r libraries}
+library(tidyverse)
+library(skimr)
+library(janitor)
+```
+
+Next we set the working directory, the data path, and read the csv file created from the preparing phase.
+```{r setting working directory}
+setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
+data_path = "Data/cyclistic/"
+file_name = paste0(data_path, "2023_cyclistic_tripdata_clean.csv")
+df <- read_csv(file_name)
+```
+
+We get the summary of the data. From this summary, we can notice what 
+```{r}
+glimpse(df)
+```
+
+```{r}
+skim_without_charts(df)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+First, we save the data from the "casual" class.
+```{r}
+casual_df <- df %>%
+  filter(member_casual == "casual")
+```
+
+Now we randomly sample cases with "member" class.
+```{r}
+downsampled_df <- df %>%
+  filter(member_casual == "member") %>%
+  sample_n(size = nrow(casual_df), replace = FALSE, seed = 123)
+```
+
+Finally, we can bind both dataframes.
+```{r}
+downsampled_df <- bind_rows(casual_df, downsampled_df)
+
+file_name = paste0(data_path, "2023_cyclistic_tripdata.csv")
+
+if (!file.exists(file_name)) {
+  df_files = list()
+  df <- bind_rows(lapply(files, read_csv))
+  write_csv(df, paste0(data_path, "2023_cyclistic_tripdata.csv"))
+  print("File created.")
+```

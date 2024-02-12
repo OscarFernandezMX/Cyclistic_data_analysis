@@ -1,2 +1,16 @@
 
 .DS_Store
+Data/cyclistic/202301-divvy-tripdata.csv
+Data/cyclistic/202302-divvy-tripdata.csv
+Data/cyclistic/202303-divvy-tripdata.csv
+Data/cyclistic/202304-divvy-tripdata.csv
+Data/cyclistic/202305-divvy-tripdata.csv
+Data/cyclistic/202306-divvy-tripdata.csv
+Data/cyclistic/202307-divvy-tripdata.csv
+Data/cyclistic/202308-divvy-tripdata.csv
+Data/cyclistic/202309-divvy-tripdata.csv
+Data/cyclistic/202310-divvy-tripdata.csv
+Data/cyclistic/202311-divvy-tripdata.csv
+Data/cyclistic/202312-divvy-tripdata.csv
+.Rhistory
+.ipynb_checkpoints/Cyclistic_cleaning_part1-checkpoint.ipynb
