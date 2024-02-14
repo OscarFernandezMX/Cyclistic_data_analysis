@@ -16,29 +16,37 @@ We use the following libraries.
 library(tidyverse)
 library(skimr)
 library(hms)
+library(scales)
 ```
 
 Next we set the working directory, the data path, and read the proper csv file.
-```{r setting working directory}
+```{r setting working directory and reading data}
 setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
 data_path = "Data/cyclistic/"
 file_name = paste0(data_path, "2023_cyclistic_tripdata_downsampled.csv")
 # There is a problem when exporting the data to csv where some values for ride length are missing. Therefore, we create this row again after loading the data.
 # There is also an incosistency with the time zone. Thought both Python and R have the same time zone set (Americas/Mexico_City), R displays the time 6 hours ahead. For this reason, we decided to substract 6 hours from the starting and ending dates.
+# In the same way, when reading the days, the format has changed, therefore we create the day_of_week column again.
 df <- read_csv(file_name) %>%
-  mutate(ride_length = as_hms(ended_at - started_at), started_at = started_at - as_hms("06:00:00"), ended_at = ended_at - as_hms("06:00:00"))
+  mutate(
+    ride_length = as_hms(ended_at - started_at),
+    started_at = started_at - as_hms("06:00:00"),
+    ended_at = ended_at - as_hms("06:00:00"),
+    day_of_week = format(as.Date(started_at), "%A")
+    )
   
 skim_without_charts(df)
 ```
 
-### Analyzing by month
+
+### Separating date in day, month, and year
 
 For our analysis, we might want to check for trends based on the month, as well as the season. Therefore, we need to extract the month from the starting dates. We'll also add the year and day columns.
-```{r}
+```{r day, month, and year}
 df <- df %>%
   mutate(
-    month = format(as.Date(started_at), "%m"),
     day = format(as.Date(started_at), "%d"),
+    month = format(as.Date(started_at), "%m"),
     year = format(as.Date(started_at), "%Y")
   )
 
@@ -50,12 +58,12 @@ head(df)
 
 For this part of the analysis, we focus more on the rides, rather than their location. Therefore, we select these attributes for this part and create a new dataframe ignoring the other attributes related to location (latitude and logitude).
 
-First we see the 13 attributes from our data.
-```{r}
+First we see the 14 attributes from our data plus the 4 added from the above steps.
+```{r all attributes}
 colnames(df)
 ```
 
-Now we select the attributes of interest and create the new metric of ride duration.
+Now we select the attributes of interest.
 ```{r selecting attributes}
 rides <- df %>%
   select(ride_id, rideable_type, started_at, ended_at, day, month, day_of_week, ride_length, start_station_name, member_casual) %>%
@@ -63,12 +71,15 @@ rides <- df %>%
 
 head(rides)
 ```
+With this data we can start our analysis now.
 
 
+## Descriptive analysis
 
-### Descriptive analysis
+The first part is to summarize the data. We'll do it by day of the week and by month. But first let's take a look at the whole data.
 
-```{r summary of day of week and ride length}
+We can see the following statistics for the `ride_length` attribute. First we can see the minimum, 1st quartile (25th percentile), median (also the 2nd quartile), 3rd quartile (75th percentile), mean, and maximum time.
+```{r summary ride length}
 rides %>%
   summarize(t_min = min(ride_length),
             t_q1 = quantile(ride_length, probs = 0.25),
@@ -78,59 +89,155 @@ rides %>%
             t_max = max(ride_length))
 ```
 
-
-```{r stats for ride length}
+Next we show the same statistics for each member type.
+```{r stats for ride_length per member_casual}
 rides %>%
   group_by(member_casual) %>%
-  summarize(t_min = min(ride_length),
-            t_q1 = quantile(ride_length, probs = 0.25),
-            t_median = median(ride_length),
-            t_q3 = quantile(ride_length, probs = 0.75),
-            t_mean = mean(ride_length),
-            t_max = max(ride_length))
+  summarize(
+    t_min = min(ride_length),
+    t_q1 = quantile(ride_length, probs = 0.25),
+    t_median = median(ride_length),
+    t_q3 = quantile(ride_length, probs = 0.75),
+    t_mean = as_hms(round(mean(ride_length), 2)),
+    t_max = as_hms(round(max(ride_length), 2))
+  )
 ```
 
-```{r stats for ride length}
-rides %>%
-  mutate(day_of_week = format(as.Date(started_at), "%A")) %>%
+
+### By day of the week
+
+We can now summarize the data by day of the week. This code chunck shows the same statistics from the beginning, but now it is grouped by day of the week and member type.
+```{r stats by day_of_week}
+summary_by_day_of_week <- rides %>%
   mutate(day_of_week = ordered(day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
   group_by(day_of_week, member_casual) %>%
-  summarize(t_min = min(ride_length),
-            t_q1 = quantile(ride_length, probs = 0.25),
-            t_median = median(ride_length),
-            t_q3 = quantile(ride_length, probs = 0.75),
-            t_mean = mean(ride_length),
-            t_max = max(ride_length))
+  summarize(
+    number_of_rides = n(),
+    t_min = min(ride_length),
+    t_q1 = quantile(ride_length, probs = 0.25),
+    t_median = median(ride_length),
+    t_q3 = quantile(ride_length, probs = 0.75),
+    t_mean = as_hms(round(mean(ride_length), 2)),
+    t_max = as_hms(max(ride_length))
+  )
+
+summary_by_day_of_week
 ```
 
-```{r}
-rides %>% 
-  mutate(weekday = wday(started_at, label = TRUE)) %>% 
-  group_by(member_casual, weekday) %>% 
-  summarise(number_of_rides = n()
-            ,average_duration = mean(ride_length)) %>% 
-  arrange(member_casual, weekday)  %>% 
-  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
-  geom_col(position = "dodge")
-
-```
-```{r}
+<--- Delete
+Analyze trends about start and end hour per class and day. First check distributions to see if there is a way to partition the hours (start and end of workday).
+```{r delete chunck}
 rides %>%
-  arrange(member_casual, day_of_week) %>%
-  ggplot(aes(x = day_of_week)) +
-  geom_bar(aes(fill = member_casual), position = "dodge")
+  mutate(day_of_week = ordered(day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  mutate(
+    started_at = as_hms(format(started_at, "%H:%M:%S")),
+    ended_at = as_hms(format(ended_at, "%H:%M:%S"))
+  ) %>%
+  group_by(day_of_week, member_casual) %>%
+  summarize(
+    number_of_rides = n(),
+    mean_start = as_hms(mean(started_at)),
+    mean_end = as_hms(mean(ended_at)),
+    t_mean = as_hms(round(mean(ride_length), 2)),
+  )
 ```
-```{r}
-rides %>% 
-  mutate(weekday = wday(started_at, label = TRUE)) %>% 
-  group_by(member_casual, weekday) %>% 
-  summarise(number_of_rides = n()
-            ,average_duration = mean(ride_length)) %>% 
-  arrange(member_casual, weekday)  %>% 
-  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
-  geom_col(position = "dodge")
+Delete -->
 
+
+With this data we can make some plots using only the number of rides and the mean ride duration.
+```{r plot number of rides per day}
+ggplot(data = summary_by_day_of_week,
+       (aes(x = day_of_week,y = number_of_rides, fill = member_casual))) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of rides", subtitle = "per day and member type") +
+  xlab("Day of the week") +
+  ylab("Number of rides") +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))
 ```
+This graph shows that casual users tend to ride more than members on weekdends. Member users ride more during the weekdays, and the numbers are very similar each workday. On weekends, specially Saturday and Sunday, they ride there are less rides than usual.
+
+```{r plot average ride duration per day}
+ggplot(data = summary_by_day_of_week,
+       aes(x = day_of_week, y = t_mean, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average ride duration", subtitle = "per day and member type") +
+  xlab("Day of the week") +
+  ylab("Average ride duration")
+```
+The average duration of casual users' rides is almost twice average from member rides. In both cases, rides tend to last longer during the weekend, but this trend is more visible on casual members.
+
+
+### By month
+
+Another interesting thing, is to observe this data by month. Therefore we group the data and show the same statistics based on the month (recall that this data is for the year 2023).
+```{r stats by month}
+summary_by_month <- rides %>%
+  group_by(month, member_casual) %>%
+  summarize(
+    number_of_rides = n(),
+    t_min = min(ride_length),
+    t_q1 = quantile(ride_length, probs = 0.25),
+    t_median = median(ride_length),
+    t_q3 = quantile(ride_length, probs = 0.75),
+    t_mean = as_hms(round(mean(ride_length), 2)),
+    t_max = as_hms(max(ride_length))
+  )
+summary_by_month
+```
+
+With this data we can make similar plots.
+```{r plot number of rides per month}
+ggplot(data = summary_by_month,
+       aes(x = month, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of rides", subtitle = "per month and member type") +
+  xlab("Month") +
+  ylab("Number of rides") +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))
+```
+We can see that there is a considerable increase in the use of the bicycle starting from March and peaking at August. In September, the use starts to decrease and by December it is very low, specially in the causal riders. In these months, the member riders use the bicycle more than casual members. Casual users ride more than members from May to September.
+
+```{r plot average ride duration per month}
+ggplot(aes(x = month, y = t_mean, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of rides", subtitle = "per month and member type") +
+  xlab("Month") +
+  ylab("Average ride duration")
+```
+This trend also affects the average ride duration. People tend to ride more time from April, peaking at July, then decreasing smoothly. Until November, the time average time is still higher than 20 minutes. However, this trend is more smooth for members, where the average ride duration is almost the same, no matter the month. Also, we can notably see that casual members ride more time than members each month.
+
+
+## Conclusions from the analysis
+
+Based on the available data, we can see two important things:  
+- It is probable that casual riders use the bicycle more for recreational uses. This explains why they ride more time, and the seasonal use (see graph below - it's not very enjoyable to ride in low temperatures).
+- Probably, people with membership use the bicycle to commute to work. This might explain why their rides last less and keep almost the same during the weekdays, and in every month. Though in winter they tend to ride less, those who ride, still use the bicycle to commute, therefore, they take almost the same time to arrive, which might explain why the average time remains almost the same every month.
+
+```{r plot number of rides per month with annotation}
+ggplot(data = summary_by_month,
+       aes(x = month, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of rides", subtitle = "per month and member type") +
+  xlab("Month") +
+  ylab("Number of rides") +
+  scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3)) +
+  annotate("rect", xmin=c(0, 11.5), xmax=c(3.5, 13),
+           ymin=c(0) , ymax=c(250000), alpha=0.1, color="blue", fill="blue") +
+  annotate("text", x = 1.5, y = 200000, 
+           label = "Winter", color="orange", 
+           size = 8, angle = -15, fontface="bold")
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 From the above summary, it is interesting to see that there are rides that lasted only one second. This is unusual, and we will assume that it is not an error in the date. We are going to consider a ride that lasted less than 5 minutes as a ride where the user might have had a problem. We'll save this into a new dataframe and set it apart for another analysis.
