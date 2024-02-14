@@ -1,0 +1,181 @@
+---
+title: "Cyclistic data analysis - analyzing"
+author: "Oscar Fernandez Solano"
+date: "2024-02-12"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+After concluding the cleaning phase ([part 1](https://github.com/OscarFernandezMX) and [part 2](https://github.com/OscarFernandezMX)), we can start analyzing the data.
+
+We use the following libraries.
+```{r libraries}
+library(tidyverse)
+library(hms)
+```
+
+Next we set the working directory, the data path, and read the proper csv file.
+```{r setting working directory}
+setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
+data_path = "Data/cyclistic/"
+file_name = paste0(data_path, "2023_cyclistic_tripdata_downsampled.csv")
+# There is a problem when exporting the data to csv where some values for ride length are missing. Therefore, we create this row again after loading the data.
+# There is also an incosistency with the time zone. Thought both Python and R have the same time zone set (Americas/Mexico_City), R displays the time 6 hours ahead. For this reason, we decided to substract 6 hours from the starting and ending dates.
+df <- read_csv(file_name) %>%
+  mutate(ride_length = as_hms(ended_at - started_at), started_at = started_at - as_hms("06:00:00"), ended_at = ended_at - as_hms("06:00:00"))
+  
+skim_without_charts(df)
+```
+
+### Analyzing by month
+
+For our analysis, we might want to check for trends based on the month, as well as the season. Therefore, we need to extract the month from the starting dates. We'll also add the year and day columns.
+```{r}
+df <- df %>%
+  mutate(
+    month = format(as.Date(started_at), "%m"),
+    day = format(as.Date(started_at), "%d"),
+    year = format(as.Date(started_at), "%Y")
+  )
+
+head(df)
+```
+
+
+### Selecting attributes of interest
+
+For this part of the analysis, we focus more on the rides, rather than their location. Therefore, we select these attributes for this part and create a new dataframe ignoring the other attributes related to location (latitude and logitude).
+
+First we see the 13 attributes from our data.
+```{r}
+colnames(df)
+```
+
+Now we select the attributes of interest and create the new metric of ride duration.
+```{r selecting attributes}
+rides <- df %>%
+  select(ride_id, rideable_type, started_at, ended_at, day, month, day_of_week, ride_length, start_station_name, member_casual) %>%
+  arrange(started_at)
+
+head(rides)
+```
+
+
+
+### Descriptive analysis
+
+```{r summary of day of week and ride length}
+rides %>%
+  summarize(t_min = min(ride_length),
+            t_q1 = quantile(ride_length, probs = 0.25),
+            t_median = median(ride_length),
+            t_q3 = quantile(ride_length, probs = 0.75),
+            t_mean = mean(ride_length),
+            t_max = max(ride_length))
+```
+
+
+```{r stats for ride length}
+rides %>%
+  group_by(member_casual) %>%
+  summarize(t_min = min(ride_length),
+            t_q1 = quantile(ride_length, probs = 0.25),
+            t_median = median(ride_length),
+            t_q3 = quantile(ride_length, probs = 0.75),
+            t_mean = mean(ride_length),
+            t_max = max(ride_length))
+```
+
+```{r stats for ride length}
+rides %>%
+  mutate(day_of_week = format(as.Date(started_at), "%A")) %>%
+  mutate(day_of_week = ordered(day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  group_by(day_of_week, member_casual) %>%
+  summarize(t_min = min(ride_length),
+            t_q1 = quantile(ride_length, probs = 0.25),
+            t_median = median(ride_length),
+            t_q3 = quantile(ride_length, probs = 0.75),
+            t_mean = mean(ride_length),
+            t_max = max(ride_length))
+```
+
+
+From the above summary, it is interesting to see that there are rides that lasted only one second. This is unusual, and we will assume that it is not an error in the date. We are going to consider a ride that lasted less than 5 minutes as a ride where the user might have had a problem. We'll save this into a new dataframe and set it apart for another analysis.
+```{r defining rides with problems}
+problems_with_the_ride <- rides %>%
+  filter(ride_length < 300)
+
+rides <- rides %>%
+  filter(ride_length >= 300)
+```
+
+Now we can see how the statistics for the ride length changed.
+```{r stats for ride length after filtering}
+rides %>%
+  group_by(member_casual) %>%
+  summarize(t_min = min(ride_length),
+            t_q1 = quantile(ride_length, probs = 0.25),
+            t_median = median(ride_length),
+            t_q3 = quantile(ride_length, probs = 0.75),
+            t_mean = mean(ride_length),
+            t_max = max(ride_length))
+```
+
+
+```{r}
+rides %>%
+  filter(ride_length <= as_hms("00:26:52")) %>%
+  filter(ride_length >= as_hms("00:07:34")) %>%
+  ggplot() +
+  geom_histogram(aes(x = ride_length), bins = 15, alpha = 0.8) +
+  facet_wrap(~member_casual) +
+  ylab("Number of rides")
+```
+
+```{r}
+rides %>%
+  filter(ride_length <= as_hms("00:26:52")) %>%
+  filter(ride_length >= as_hms("00:07:34")) %>%
+  ggplot() +
+  geom_histogram(aes(x = ride_length, fill = factor(member_casual)), bins = 15, alpha = 0.5, position = "dodge") +
+  ylab("Number of rides")
+```
+
+```{r}
+rides %>%
+  filter(ride_length <= as_hms("00:26:52")) %>%
+  filter(ride_length >= as_hms("00:07:34")) %>%
+  ggplot() +
+  geom_histogram(aes(x = ride_length, fill = member_casual), bins = 15, alpha = 0.5, position = "dodge") +
+  facet_wrap(~day_of_week) +
+  ylab("Number of rides")
+```
+
+
+```{r}
+ggplot(rides, aes(x = day_of_week)) +
+  geom_bar(aes(fill = member_casual), position = "dodge")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
