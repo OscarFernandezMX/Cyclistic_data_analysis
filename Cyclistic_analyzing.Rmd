@@ -14,6 +14,7 @@ After concluding the cleaning phase ([part 1](https://github.com/OscarFernandezM
 We use the following libraries.
 ```{r libraries}
 library(tidyverse)
+library(skimr)
 library(hms)
 ```
 
@@ -102,6 +103,35 @@ rides %>%
             t_max = max(ride_length))
 ```
 
+```{r}
+rides %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge")
+
+```
+```{r}
+rides %>%
+  arrange(member_casual, day_of_week) %>%
+  ggplot(aes(x = day_of_week)) +
+  geom_bar(aes(fill = member_casual), position = "dodge")
+```
+```{r}
+rides %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge")
+
+```
+
 
 From the above summary, it is interesting to see that there are rides that lasted only one second. This is unusual, and we will assume that it is not an error in the date. We are going to consider a ride that lasted less than 5 minutes as a ride where the user might have had a problem. We'll save this into a new dataframe and set it apart for another analysis.
 ```{r defining rides with problems}
@@ -152,12 +182,6 @@ rides %>%
   geom_histogram(aes(x = ride_length, fill = member_casual), bins = 15, alpha = 0.5, position = "dodge") +
   facet_wrap(~day_of_week) +
   ylab("Number of rides")
-```
-
-
-```{r}
-ggplot(rides, aes(x = day_of_week)) +
-  geom_bar(aes(fill = member_casual), position = "dodge")
 ```
 
 

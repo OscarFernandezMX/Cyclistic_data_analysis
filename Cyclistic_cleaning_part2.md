@@ -60,30 +60,24 @@ created from the preparing phase.
 ``` r
 setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
 data_path = "Data/cyclistic/"
-file_name = paste0(data_path, "2023_cyclistic_tripdata_clean.csv")
+file_name = paste0(data_path, "2023_cyclistic_tripdata_clean_1.csv")
 df <- read_csv(file_name)
 ```
 
-    ## Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    ## e.g.:
-    ##   dat <- vroom(...)
-    ##   problems(dat)
-
-    ## Rows: 4330400 Columns: 15
+    ## Rows: 4330400 Columns: 13
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr  (7): ride_id, rideable_type, start_station_name, start_station_id, end_...
-    ## dbl  (5): start_lat, start_lng, end_lat, end_lng, day_of_week
+    ## dbl  (4): start_lat, start_lng, end_lat, end_lng
     ## dttm (2): started_at, ended_at
-    ## time (1): ride_duration
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ### Data check
 
-We get the summary of the data to check that the file is clean. After
-this, we can continue with the cleaning phase.
+We get the summary of the data to check that the file from the first
+part is ready. After this, we can continue with the cleaning phase.
 
 ``` r
 skim_without_charts(df)
@@ -93,12 +87,11 @@ skim_without_charts(df)
 |:-------------------------------------------------|:--------|
 | Name                                             | df      |
 | Number of rows                                   | 4330400 |
-| Number of columns                                | 15      |
+| Number of columns                                | 13      |
 | \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_   |         |
 | Column type frequency:                           |         |
 | character                                        | 7       |
-| difftime                                         | 1       |
-| numeric                                          | 5       |
+| numeric                                          | 4       |
 | POSIXct                                          | 2       |
 | \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ |         |
 | Group variables                                  | None    |
@@ -117,12 +110,6 @@ Data summary
 | end_station_id     |         0 |             1 |   3 |  36 |     0 |     1483 |          0 |
 | member_casual      |         0 |             1 |   6 |   6 |     0 |        2 |          0 |
 
-**Variable type: difftime**
-
-| skim_variable | n_missing | complete_rate | min    | max         | median   | n_unique |
-|:--------------|----------:|--------------:|:-------|:------------|:---------|---------:|
-| ride_duration |         3 |             1 | 1 secs | 322740 secs | 00:09:48 |    20211 |
-
 **Variable type: numeric**
 
 | skim_variable | n_missing | complete_rate |   mean |   sd |     p0 |    p25 |    p50 |    p75 |   p100 |
@@ -131,7 +118,6 @@ Data summary
 | start_lng     |         0 |             1 | -87.64 | 0.02 | -87.84 | -87.66 | -87.64 | -87.63 | -87.53 |
 | end_lat       |         0 |             1 |  41.90 | 0.06 |   0.00 |  41.88 |  41.90 |  41.93 |  42.06 |
 | end_lng       |         0 |             1 | -87.64 | 0.08 | -87.84 | -87.66 | -87.64 | -87.63 |   0.00 |
-| day_of_week   |         0 |             1 |   4.10 | 1.98 |   1.00 |   2.00 |   4.00 |   6.00 |   7.00 |
 
 **Variable type: POSIXct**
 
@@ -149,8 +135,8 @@ Sunday = 1 to Saturday = 7).
 
 ``` r
 df_modified <- df %>%
-  mutate(ride_duration = as_hms(ended_at - started_at)) %>%
-  mutate(day_of_week = wday(started_at)) %>%
+  mutate(ride_length = as_hms(ended_at - started_at)) %>%
+  mutate(day_of_week = wday(started_at, label = TRUE)) %>%
   arrange(started_at)
 
 head(df_modified)
@@ -168,13 +154,13 @@ head(df_modified)
     ## # ℹ 11 more variables: start_station_name <chr>, start_station_id <chr>,
     ## #   end_station_name <chr>, end_station_id <chr>, start_lat <dbl>,
     ## #   start_lng <dbl>, end_lat <dbl>, end_lng <dbl>, member_casual <chr>,
-    ## #   ride_duration <time>, day_of_week <dbl>
+    ## #   ride_length <time>, day_of_week <ord>
 
 Now that we have included this attributes, we create a new csv file. We
 replace the clean file to avoid having multiple files.
 
 ``` r
-file_name = paste0(data_path, "2023_cyclistic_tripdata_clean.csv")
+file_name = paste0(data_path, "2023_cyclistic_tripdata_clean_2.csv")
 write_csv(df_modified, file_name)
 print("File created.")
 ```
@@ -238,23 +224,7 @@ if (!file.exists(file_name)) {
 }
 ```
 
-    ## [1] "File already created."
-
-    ## Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    ## e.g.:
-    ##   dat <- vroom(...)
-    ##   problems(dat)
-
-    ## Rows: 3062290 Columns: 15
-    ## ── Column specification ────────────────────────────────────────────────────────
-    ## Delimiter: ","
-    ## chr  (7): ride_id, rideable_type, start_station_name, start_station_id, end_...
-    ## dbl  (5): start_lat, start_lng, end_lat, end_lng, day_of_week
-    ## dttm (2): started_at, ended_at
-    ## time (1): ride_duration
-    ## 
-    ## ℹ Use `spec()` to retrieve the full column specification for this data.
-    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## [1] "File created."
 
 ``` r
 ggplot(downsampled_df) +

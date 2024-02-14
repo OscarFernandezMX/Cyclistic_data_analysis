@@ -45,7 +45,7 @@ The next step is to create the ride length based on the information from the sta
 ```{r}
 df_modified <- df %>%
   mutate(ride_length = as_hms(ended_at - started_at)) %>%
-  mutate(day_of_week = wday(started_at)) %>%
+  mutate(day_of_week = wday(started_at, label = TRUE)) %>%
   arrange(started_at)
 
 head(df_modified)
