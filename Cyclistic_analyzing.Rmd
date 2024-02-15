@@ -21,17 +21,14 @@ library(scales)
 
 Next we set the working directory, the data path, and read the proper csv file.
 ```{r setting working directory and reading data}
-setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
+setwd("~/GitHub/Data_Science_Projects")
 data_path = "Data/cyclistic/"
 file_name = paste0(data_path, "2023_cyclistic_tripdata_downsampled.csv")
 # There is a problem when exporting the data to csv where some values for ride length are missing. Therefore, we create this row again after loading the data.
-# There is also an incosistency with the time zone. Thought both Python and R have the same time zone set (Americas/Mexico_City), R displays the time 6 hours ahead. For this reason, we decided to substract 6 hours from the starting and ending dates.
-# In the same way, when reading the days, the format has changed, therefore we create the day_of_week column again.
+# When reading the days, the format has changed, therefore we create the day_of_week column again.
 df <- read_csv(file_name) %>%
   mutate(
     ride_length = as_hms(ended_at - started_at),
-    started_at = started_at - as_hms("06:00:00"),
-    ended_at = ended_at - as_hms("06:00:00"),
     day_of_week = format(as.Date(started_at), "%A")
     )
   
@@ -124,26 +121,6 @@ summary_by_day_of_week <- rides %>%
 summary_by_day_of_week
 ```
 
-<--- Delete
-Analyze trends about start and end hour per class and day. First check distributions to see if there is a way to partition the hours (start and end of workday).
-```{r delete chunck}
-rides %>%
-  mutate(day_of_week = ordered(day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
-  mutate(
-    started_at = as_hms(format(started_at, "%H:%M:%S")),
-    ended_at = as_hms(format(ended_at, "%H:%M:%S"))
-  ) %>%
-  group_by(day_of_week, member_casual) %>%
-  summarize(
-    number_of_rides = n(),
-    mean_start = as_hms(mean(started_at)),
-    mean_end = as_hms(mean(ended_at)),
-    t_mean = as_hms(round(mean(ride_length), 2)),
-  )
-```
-Delete -->
-
-
 With this data we can make some plots using only the number of rides and the mean ride duration.
 ```{r plot number of rides per day}
 ggplot(data = summary_by_day_of_week,
@@ -198,13 +175,69 @@ ggplot(data = summary_by_month,
 We can see that there is a considerable increase in the use of the bicycle starting from March and peaking at August. In September, the use starts to decrease and by December it is very low, specially in the causal riders. In these months, the member riders use the bicycle more than casual members. Casual users ride more than members from May to September.
 
 ```{r plot average ride duration per month}
-ggplot(aes(x = month, y = t_mean, fill = member_casual)) +
+ggplot(data = summary_by_month,
+       aes(x = month, y = t_mean, fill = member_casual)) +
   geom_col(position = "dodge") +
-  labs(title = "Number of rides", subtitle = "per month and member type") +
+  labs(title = "Average ride duration", subtitle = "per month and member type") +
   xlab("Month") +
   ylab("Average ride duration")
 ```
 This trend also affects the average ride duration. People tend to ride more time from April, peaking at July, then decreasing smoothly. Until November, the time average time is still higher than 20 minutes. However, this trend is more smooth for members, where the average ride duration is almost the same, no matter the month. Also, we can notably see that casual members ride more time than members each month.
+
+
+### Distribution of start time
+
+From the data we can see that the members are more consistent with the use of the bicycle. This might be because members probably use the bike to commute to work. In this step we are going to visualize the distribution of start and end hour of the rides to investigate this trend further.
+```{r distribution of hours}
+hours_distribution <- rides %>%
+  mutate(day_of_week = ordered(day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))) %>%
+  mutate(
+    started_at = as_hms(format(started_at, "%H:%M:%S")),
+    ended_at = as_hms(format(ended_at, "%H:%M:%S"))
+  )
+```
+
+#### By day
+
+```{r start rides distribution per day for members}
+hours_distribution %>%
+  filter(member_casual == "member") %>%
+  ggplot(aes(x = started_at)) +
+  geom_histogram(bins = 24) +
+  facet_wrap(~day_of_week) +
+  labs(title = "Distribution of start times", subtitle = "by day of the week") +
+  xlab("The hour at which the ride started") +
+  ylab("Number of rides")
+```
+In this plot we have some evidence that could suggest that members indeed use the bicycle to commute to work. Since we can see some peaks before 9:00 and after 15:00 h, which is within the workday. Interestingly, on weekends we can't see that trend, because most people work from Monday to Friday.
+
+```{r start rides distribution per day for casual users}
+hours_distribution %>%
+  filter(member_casual == "casual") %>%
+  ggplot(aes(x = started_at)) +
+  geom_histogram(bins = 24) +
+  facet_wrap(~day_of_week)
+```
+In the case of casual users, we can also see two main peaks, but the highest is after 15:00 h. While this might also suggest that causal riders commute on the bike to work, the available data is not enough to support more assumptions. The only thing we might suspect is that, since casual users ride more time, they might ride after work, not precisely to commute to their homes, but as a recreation ride.
+
+#### By month
+
+```{r start rides distribution per month for members}
+hours_distribution %>%
+  filter(member_casual == "member") %>%
+  ggplot(aes(x = started_at)) +
+  geom_histogram(bins = 24) +
+  facet_wrap(~month)
+```
+
+```{r start rides distribution per month for casual users}
+hours_distribution %>%
+  filter(member_casual == "casual") %>%
+  ggplot(aes(x = started_at)) +
+  geom_histogram(bins = 24) +
+  facet_wrap(~month)
+```
+We can see that in both cases, the trend is the same for the two type of users for each month, where we can only see the difference in the amount of rides.
 
 
 ## Conclusions from the analysis
@@ -229,67 +262,6 @@ ggplot(data = summary_by_month,
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-From the above summary, it is interesting to see that there are rides that lasted only one second. This is unusual, and we will assume that it is not an error in the date. We are going to consider a ride that lasted less than 5 minutes as a ride where the user might have had a problem. We'll save this into a new dataframe and set it apart for another analysis.
-```{r defining rides with problems}
-problems_with_the_ride <- rides %>%
-  filter(ride_length < 300)
-
-rides <- rides %>%
-  filter(ride_length >= 300)
-```
-
-Now we can see how the statistics for the ride length changed.
-```{r stats for ride length after filtering}
-rides %>%
-  group_by(member_casual) %>%
-  summarize(t_min = min(ride_length),
-            t_q1 = quantile(ride_length, probs = 0.25),
-            t_median = median(ride_length),
-            t_q3 = quantile(ride_length, probs = 0.75),
-            t_mean = mean(ride_length),
-            t_max = max(ride_length))
-```
-
-
-```{r}
-rides %>%
-  filter(ride_length <= as_hms("00:26:52")) %>%
-  filter(ride_length >= as_hms("00:07:34")) %>%
-  ggplot() +
-  geom_histogram(aes(x = ride_length), bins = 15, alpha = 0.8) +
-  facet_wrap(~member_casual) +
-  ylab("Number of rides")
-```
-
-```{r}
-rides %>%
-  filter(ride_length <= as_hms("00:26:52")) %>%
-  filter(ride_length >= as_hms("00:07:34")) %>%
-  ggplot() +
-  geom_histogram(aes(x = ride_length, fill = factor(member_casual)), bins = 15, alpha = 0.5, position = "dodge") +
-  ylab("Number of rides")
-```
-
-```{r}
-rides %>%
-  filter(ride_length <= as_hms("00:26:52")) %>%
-  filter(ride_length >= as_hms("00:07:34")) %>%
-  ggplot() +
-  geom_histogram(aes(x = ride_length, fill = member_casual), bins = 15, alpha = 0.5, position = "dodge") +
-  facet_wrap(~day_of_week) +
-  ylab("Number of rides")
-```
 
 
 
