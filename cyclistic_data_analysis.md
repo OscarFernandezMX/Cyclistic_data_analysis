@@ -10,7 +10,7 @@ Leong](https://unsplash.com/photos/a-row-of-bikes-parked-next-to-each-other-on-a
 
 # Introduction
 
-In 2016, Cyclistic (a ficticious company) launched a successful
+In 2016, Cyclistic (a fictitious company) launched a successful
 bike-sharing offering. Since then, the program has grown to a fleet of
 5,824 bikes georeferenced and locked to a network of 692 stations
 throughout Chicago. Bikes can be unlocked from one station and returned
@@ -59,12 +59,12 @@ date. For each ride identified with a unique id, we have information
 about the type of bicycle used, start and end date including time,
 information about the start and end station like name, id, and location
 coordinates (longitude and latitude). There is also an attribute for the
-type of user, wheter it is casual or member. This attribute is key to
+type of user, whether it is casual or member. This attribute is key to
 help us solving our business task.
 
 ## How data is stored?
 
-To store the data, we created a Data folder containing the 12 indivudual
+To store the data, we created a folder containing the 12 individual
 files (one per month). Then we extracted each csv file and removed the
 original zip files. After verifying that each file has the same
 structure, we joined them into a single csv file. This is the file that
@@ -96,7 +96,7 @@ date wasn’t within that range.
 - We also found that there were incoherent dates where the start date
 was greater than the end date. The rows containing this inconsistency
 were also removed.  
-- Finally, we removed rows with empy values for any attribute.
+- Finally, we removed rows with empty values for any attribute.
 
 The complete report of the cleaning steps for part 1 can be found
 [here](https://github.com/OscarFernandezMX/Data_Science_Projects/blob/main/Cyclistic_cleaning_part1.ipynb).
@@ -121,7 +121,8 @@ Therefore, we added the attributes `day`, `month` and `year` to our
 dataset After that, we decided to ignore the attributes related to the
 stations’ location (latitude and longitude). With this final data, we
 made the analysis. Our results show the mean values by day of the week
-and by month for the number of rides and the average duration.
+and by month for the number of rides and the average duration for each
+type of user.
 
 The first difference that we can see between casual users and members is
 in the number of rides along the days of the week.
@@ -137,7 +138,7 @@ month?
 ![](Cyclistic_analyzing_files/figure-gfm/plot%20number%20of%20rides%20per%20month-1.png)
 
 We can see that there is a considerable increase in the use of the
-bicycle starting from March and peaking at August. In September, the use
+bicycle starting from March and peaking in August. In September, the use
 starts to decrease and by December it is very low, specially in the
 causal riders. In these months, the member riders use the bicycle more
 than casual members. Casual users ride more than members from May to
@@ -154,22 +155,22 @@ every day of the week.
 
 ![](Cyclistic_analyzing_files/figure-gfm/plot%20average%20ride%20duration%20per%20day-1.png)
 
-The average duration of casual users’ rides is almost twice average from
-member rides. In both cases, rides tend to last longer during the
-weekend, but this trend is more visible on casual members. Let’s see
-what happened each month.
+The average duration of casual users’ rides is almost twice than the
+average from member rides. In both cases, rides tend to last longer
+during the weekend, but this trend is more visible on casual members.
+Let’s see what happened each month.
 
 ![](Cyclistic_analyzing_files/figure-gfm/plot%20average%20ride%20duration%20per%20month-1.png)
 
-People tend to ride more time from April, peaking at July, then
-decreasing smoothly. Until November, the time average time is still
-higher than 20 minutes. However, this trend is more smooth for members,
-where the average ride duration is almost the same, no matter the month.
-Also, we can notably see that casual members ride more time than members
-each month.
+We can notably see that casual users ride more time than members each
+month. People tend to ride more time from April, peaking in July, then
+decreasing smoothly. Until November, the time average time for casual
+riders is still higher than 20 minutes. However, this trend is more
+smooth for members, where the average ride duration is almost the same,
+no matter the month.
 
 At this point, we suspect that casual users ride as a recreational
-activity, while members used it also to commute to work. To investigate
+activity, while members use it also to commute to work. To investigate
 this further, we decided to graph the distribution of the start time of
 every ride.
 
@@ -179,7 +180,7 @@ In this plot we have some evidence that could suggest that members
 indeed use the bicycle to commute to work. Since we can see some peaks
 before 9:00 and after 15:00 h, which is within the workday.
 Interestingly, on weekends we can’t see that trend, because most people
-work from Monday to Friday.
+work from Monday to Friday. What happens with casual users?
 
 ![](Cyclistic_analyzing_files/figure-gfm/start%20rides%20distribution%20per%20day%20for%20casual%20users-1.png)
 
@@ -188,8 +189,35 @@ highest is after 15:00 h. While this might also suggest that causal
 riders commute on the bike to work, the available data is not enough to
 support more assumptions. The only thing we might suspect is that, since
 casual users ride more time, they might ride after work, not precisely
-to commute to their homes, but as a recreation ride.
+to commute to their homes, but as a recreational ride.
 
 # Conclusions
 
+Based on the available data, we can notice two important differences
+between casual and member users:  
+- It is probable that casual riders use the bicycle more for
+recreational uses. This explains why they ride more time, and the
+seasonal use.  
+- Probably, people with membership use the bicycle to commute to work.
+This might explain why their rides last less and keep almost the same
+during the weekdays, and in every month. Though in winter they tend to
+ride less frequently, those who ride, still use the bicycle to commute,
+therefore, they take almost the same time to arrive, which might explain
+why the average time remains almost the same every month.
+
 # Recomendations
+
+Our recommendations based on this analysis are the following:  
+1. Focus on showing the casual users that cycling can be more than a
+recreational rides. Specially, showing them the usefulness of the
+bicycle to commute.  
+2. Showing the users the benefits of having access to bicycles all day,
+since they tend to ride more at a specific time of the day (probably
+paying a single ride). This might be in the form of how much they could
+save with the membership.  
+3. Offer incentives for frequent casual users to get a discount in their
+first yearly membership. Casual users ride on average more time than
+members, they might be interested in knowing that they can enjoy more
+the benefits of a membership if they get a discount for the first year.
+For example, unlocking a discount for the membership after a certain
+minutes of riding.
