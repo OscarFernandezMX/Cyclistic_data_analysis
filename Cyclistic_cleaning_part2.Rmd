@@ -26,7 +26,7 @@ library(hms)
 
 Next we set the working directory, the data path, and read the csv file created from the preparing phase.
 ```{r setting working directory}
-setwd("/Users/oscarfs/GitHub/Data_Science_Projects")
+setwd("~/GitHub/Data_Science_Projects")
 data_path = "Data/cyclistic/"
 file_name = paste0(data_path, "2023_cyclistic_tripdata_clean_1.csv")
 df <- read_csv(file_name)

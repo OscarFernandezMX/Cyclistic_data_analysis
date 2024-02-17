@@ -324,7 +324,7 @@ ggplot(data = summary_by_day_of_week,
 
 ![](Cyclistic_analyzing_files/figure-gfm/plot%20number%20of%20rides%20per%20day-1.png)<!-- -->
 This graph shows that casual users tend to ride more than members on
-weekdends. Member users ride more during the weekdays, and the numbers
+weekends. Member users ride more during the weekdays, and the numbers
 are very similar each workday. On weekends, specially Saturday and
 Sunday, they ride there are less rides than usual.
 
@@ -448,7 +448,7 @@ hours_distribution %>%
   ggplot(aes(x = started_at)) +
   geom_histogram(bins = 24) +
   facet_wrap(~day_of_week) +
-  labs(title = "Distribution of start times", subtitle = "by day of the week") +
+  labs(title = "Distribution of start times for members", subtitle = "by day of the week") +
   xlab("The hour at which the ride started") +
   ylab("Number of rides")
 ```
@@ -465,7 +465,10 @@ hours_distribution %>%
   filter(member_casual == "casual") %>%
   ggplot(aes(x = started_at)) +
   geom_histogram(bins = 24) +
-  facet_wrap(~day_of_week)
+  facet_wrap(~day_of_week) +
+  labs(title = "Distribution of start times for casual users", subtitle = "by day of the week") +
+  xlab("The hour at which the ride started") +
+  ylab("Number of rides")
 ```
 
 ![](Cyclistic_analyzing_files/figure-gfm/start%20rides%20distribution%20per%20day%20for%20casual%20users-1.png)<!-- -->
@@ -507,12 +510,13 @@ Based on the available data, we can see two important things:
 - It is probable that casual riders use the bicycle more for
 recreational uses. This explains why they ride more time, and the
 seasonal use (see graph below - it’s not very enjoyable to ride in low
-temperatures). - Probably, people with membership use the bicycle to
-commute to work. This might explain why their rides last less and keep
-almost the same during the weekdays, and in every month. Though in
-winter they tend to ride less, those who ride, still use the bicycle to
-commute, therefore, they take almost the same time to arrive, which
-might explain why the average time remains almost the same every month.
+temperatures).  
+- Probably, people with membership use the bicycle to commute to work.
+This might explain why their rides last less and keep almost the same
+during the weekdays, and in every month. Though in winter they tend to
+ride less, those who ride, still use the bicycle to commute, therefore,
+they take almost the same time to arrive, which might explain why the
+average time remains almost the same every month.
 
 ``` r
 ggplot(data = summary_by_month,

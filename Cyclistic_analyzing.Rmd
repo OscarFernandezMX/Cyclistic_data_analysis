@@ -131,7 +131,7 @@ ggplot(data = summary_by_day_of_week,
   ylab("Number of rides") +
   scale_y_continuous(labels = unit_format(unit = "K", scale = 1e-3))
 ```
-This graph shows that casual users tend to ride more than members on weekdends. Member users ride more during the weekdays, and the numbers are very similar each workday. On weekends, specially Saturday and Sunday, they ride there are less rides than usual.
+This graph shows that casual users tend to ride more than members on weekends. Member users ride more during the weekdays, and the numbers are very similar each workday. On weekends, specially Saturday and Sunday, they ride there are less rides than usual.
 
 ```{r plot average ride duration per day}
 ggplot(data = summary_by_day_of_week,
@@ -205,7 +205,7 @@ hours_distribution %>%
   ggplot(aes(x = started_at)) +
   geom_histogram(bins = 24) +
   facet_wrap(~day_of_week) +
-  labs(title = "Distribution of start times", subtitle = "by day of the week") +
+  labs(title = "Distribution of start times for members", subtitle = "by day of the week") +
   xlab("The hour at which the ride started") +
   ylab("Number of rides")
 ```
@@ -216,7 +216,10 @@ hours_distribution %>%
   filter(member_casual == "casual") %>%
   ggplot(aes(x = started_at)) +
   geom_histogram(bins = 24) +
-  facet_wrap(~day_of_week)
+  facet_wrap(~day_of_week) +
+  labs(title = "Distribution of start times for casual users", subtitle = "by day of the week") +
+  xlab("The hour at which the ride started") +
+  ylab("Number of rides")
 ```
 In the case of casual users, we can also see two main peaks, but the highest is after 15:00 h. While this might also suggest that causal riders commute on the bike to work, the available data is not enough to support more assumptions. The only thing we might suspect is that, since casual users ride more time, they might ride after work, not precisely to commute to their homes, but as a recreation ride.
 
@@ -243,7 +246,7 @@ We can see that in both cases, the trend is the same for the two type of users f
 ## Conclusions from the analysis
 
 Based on the available data, we can see two important things:  
-- It is probable that casual riders use the bicycle more for recreational uses. This explains why they ride more time, and the seasonal use (see graph below - it's not very enjoyable to ride in low temperatures).
+- It is probable that casual riders use the bicycle more for recreational uses. This explains why they ride more time, and the seasonal use (see graph below - it's not very enjoyable to ride in low temperatures).  
 - Probably, people with membership use the bicycle to commute to work. This might explain why their rides last less and keep almost the same during the weekdays, and in every month. Though in winter they tend to ride less, those who ride, still use the bicycle to commute, therefore, they take almost the same time to arrive, which might explain why the average time remains almost the same every month.
 
 ```{r plot number of rides per month with annotation}
